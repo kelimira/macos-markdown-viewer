@@ -24,4 +24,41 @@ struct MarkdownHTMLTests {
         #expect(MarkdownHTML.render("[a](javascript:alert(1))").contains("href=\"#\""))
     }
     @Test func emptyInput() { #expect(MarkdownHTML.render("").isEmpty) }
+
+    @Test func safeURLAllowList() {
+        #expect(MarkdownHTML.safeURL("\u{1}javascript:alert(1)") == "#")
+        #expect(MarkdownHTML.safeURL("JaVaScRiPt:x") == "#")
+        #expect(MarkdownHTML.safeURL("data:text/html,x") == "#")
+        #expect(MarkdownHTML.safeURL("file:///etc/passwd") == "#")
+        #expect(MarkdownHTML.safeURL("HTTPS://e.com") == "HTTPS://e.com")
+        #expect(MarkdownHTML.safeURL("mailto:a@b.c") == "mailto:a@b.c")
+        #expect(MarkdownHTML.safeURL("img/a:b.png") == "img/a:b.png")
+        #expect(MarkdownHTML.safeURL("#frag") == "#frag")
+    }
+    @Test func imageRendering() {
+        #expect(MarkdownHTML.inline("![alt](pic.png)") == "<img alt=\"alt\" src=\"pic.png\">")
+    }
+    @Test func emphasisDoesNotMangleUrls() {
+        #expect(MarkdownHTML.inline("[a](http://x/**y**)") == "<a href=\"http://x/**y**\">a</a>")
+    }
+    @Test func underscoreEmphasis() {
+        #expect(MarkdownHTML.inline("_e_ __s__ snake_case_name") == "<em>e</em> <strong>s</strong> snake_case_name")
+    }
+    @Test func placeholderCollisionIgnored() {
+        #expect(MarkdownHTML.inline("`a` \u{0}0\u{0}") == "<code>a</code> 0")
+    }
+    @Test func unclosedFence() {
+        #expect(MarkdownHTML.render("```\ncode") == "<pre><code>code</code></pre>")
+    }
+    @Test func crlfAndMixedLists() {
+        #expect(MarkdownHTML.render("- a\r\n1. b") == "<ul><li>a</li></ul>\n<ol><li>b</li></ol>")
+    }
+    @Test func multiParagraphBlockquote() {
+        #expect(MarkdownHTML.render("> a\n>\n> b") == "<blockquote><p>a</p>\n<p>b</p></blockquote>")
+    }
+    @Test func spacedRule() { #expect(MarkdownHTML.render("* * *") == "<hr>") }
+    @Test func pageWrapsBody() {
+        let p = MarkdownHTML.page("# T")
+        #expect(p.contains("<h1>T</h1>") && p.contains("Content-Security-Policy"))
+    }
 }

@@ -19,14 +19,38 @@ struct MarkdownDocument: FileDocument {
 
 struct WebView: NSViewRepresentable {
     let html: String
-    func makeNSView(context: Context) -> WKWebView { WKWebView() }
-    func updateNSView(_ v: WKWebView, context: Context) { v.loadHTMLString(html, baseURL: nil) }
+    let baseURL: URL?
+
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        var loaded: String?
+        // Open clicked links in the default browser instead of replacing the document.
+        func webView(_ w: WKWebView, decidePolicyFor a: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            if a.navigationType == .linkActivated {
+                if let u = a.request.url { NSWorkspace.shared.open(u) }
+                decisionHandler(.cancel)
+            } else { decisionHandler(.allow) }
+        }
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeNSView(context: Context) -> WKWebView {
+        let v = WKWebView()
+        v.configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        v.navigationDelegate = context.coordinator
+        return v
+    }
+    func updateNSView(_ v: WKWebView, context: Context) {
+        guard context.coordinator.loaded != html else { return } // keep scroll position
+        context.coordinator.loaded = html
+        v.loadHTMLString(html, baseURL: baseURL)
+    }
 }
 
 struct MarkdownApp: App {
     var body: some Scene {
         DocumentGroup(viewing: MarkdownDocument.self) { file in
-            WebView(html: MarkdownHTML.page(file.document.text)).frame(minWidth: 480, minHeight: 360)
+            WebView(html: MarkdownHTML.page(file.document.text), baseURL: file.fileURL)
+                .frame(minWidth: 480, minHeight: 360)
         }
     }
 }

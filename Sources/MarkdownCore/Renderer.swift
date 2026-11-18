@@ -276,7 +276,7 @@ final class Renderer {
         static let link = make(#"\[([^\]]+)\]\(\s*([^)\s]+)(?:\s+&quot;(.*?)&quot;)?\s*\)"#)
         static let linkRef = make(#"\[([^\]]+)\]\[([^\]]*)\]"#)
         static let shortRef = make(#"\[([^\]]+)\](?![\[(:])"#)
-        static let bare = make(#"(?<![\w\u{0}\[])https?://[^\s<]*[^\s<.,:;!?)\]'*_~]"#)
+        static let bare = make(#"(?<![\w\x{0}\[])https?://[^\s<]*[^\s<.,:;!?)\]'*_~]"#)
         static let strongEm = make(#"\*\*\*(.+?)\*\*\*"#)
         static let strong = make(#"\*\*(.+?)\*\*|(?<!\w)__(.+?)__(?!\w)"#)
         // Two alternatives per rule (* or _); the unmatched group is empty.
@@ -321,7 +321,7 @@ final class Renderer {
         s = r(s, re.strong) { "<strong>\($0[1] + $0[2])</strong>" }
         s = r(s, re.em) { "<em>\($0[1] + $0[2])</em>" }
         s = r(s, re.del) { "<del>\($0[1])</del>" }
-        s = r(s, re.hardBreak) { _ in hold("<br>") + "\n" }
+        s = r(s, re.hardBreak) { _ in hold("<br>") }
         s = s.replacingOccurrences(of: "\n", with: " ")
         return r(s, re.slot) { stash[Int($0[1])!] }
     }

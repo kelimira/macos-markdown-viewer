@@ -2,6 +2,11 @@ import Testing
 @testable import MarkdownCore
 
 struct MarkdownHTMLTests {
+    @Test func externalLinkPolicy() {
+        for ok in ["http://a.com", "HTTPS://a.com", "mailto:a@b.c"] { #expect(MarkdownHTML.isExternallyOpenable(URL(string: ok)!)) }
+        for bad in ["file:///x/run.command", "x-apple.systempreferences:", "javascript:1"] { #expect(!MarkdownHTML.isExternallyOpenable(URL(string: bad)!)) }
+    }
+
     @Test func headingAndParagraph() {
         #expect(MarkdownHTML.render("# Hi\n\nsome *text*\nmore") == "<h1>Hi</h1>\n<p>some <em>text</em> more</p>")
     }

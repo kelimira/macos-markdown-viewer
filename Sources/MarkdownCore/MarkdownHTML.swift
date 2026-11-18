@@ -3,6 +3,11 @@ import Foundation
 /// Minimal Markdown -> HTML converter.
 /// shortcut: no tables, nested lists, loose lists, or reference links; swap in swift-markdown if needed.
 public enum MarkdownHTML {
+    /// Only web/mail links may leave the app; file: and other schemes could launch local apps.
+    public static func isExternallyOpenable(_ u: URL) -> Bool {
+        ["http", "https", "mailto"].contains(u.scheme?.lowercased() ?? "")
+    }
+
     public static func escape(_ s: String) -> String {
         s.replacingOccurrences(of: "&", with: "&amp;")
             .replacingOccurrences(of: "<", with: "&lt;")
